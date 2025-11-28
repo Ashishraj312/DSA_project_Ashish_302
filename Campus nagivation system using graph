@@ -1,0 +1,106 @@
+#python
+import heapq
+
+class Graph:
+    def __init__(self):
+        # adjacency list: { node: [(neighbor, weight), ...] }
+        self.adj = {}
+
+    def add_edge(self, u, v, w, bidirectional=True):
+        """Add an edge u -> v with weight w. 
+        Set bidirectional=False for one-way paths."""
+        if u not in self.adj:
+            self.adj[u] = []
+        if v not in self.adj:
+            self.adj[v] = []
+
+        self.adj[u].append((v, w))
+        if bidirectional:
+            self.adj[v].append((u, w))
+
+    def dijkstra(self, start, end):
+        """Return (distance, path_list) for shortest path start -> end."""
+        # Min-heap priority queue: (distance_so_far, current_node)
+        pq = [(0, start)]
+        distances = {node: float('inf') for node in self.adj}
+        distances[start] = 0
+        parent = {start: None}  # To reconstruct path
+
+        while pq:
+            dist, node = heapq.heappop(pq)
+
+            # If we reached the destination, we can stop early
+            if node == end:
+                break
+
+            # If we already found a better path before, skip this one
+            if dist > distances[node]:
+                continue
+
+            for neighbor, weight in self.adj[node]:
+                new_dist = dist + weight
+                if new_dist < distances[neighbor]:
+                    distances[neighbor] = new_dist
+                    parent[neighbor] = node
+                    heapq.heappush(pq, (new_dist, neighbor))
+
+        # If end is unreachable
+        if distances[end] == float('inf'):
+            return float('inf'), []
+
+        # Reconstruct path from end -> start using parent map
+        path = []
+        curr = end
+        while curr is not None:
+            path.append(curr)
+            curr = parent[curr]
+        path.reverse()
+
+        return distances[end], path
+
+
+def build_sample_campus_graph():
+    g = Graph()
+
+    # ---------- SAMPLE CAMPUS MAP ----------
+    # You can rename/add your real campus places here
+    g.add_edge("Main Gate", "Admin Block", 200)
+    g.add_edge("Admin Block", "Library", 150)
+    g.add_edge("Admin Block", "CSE Department", 300)
+    g.add_edge("Library", "CSE Department", 100)
+    g.add_edge("Library", "Canteen", 250)
+    g.add_edge("CSE Department", "Hostel", 400)
+    g.add_edge("Canteen", "Hostel", 350)
+    g.add_edge("Playground", "Hostel", 200)
+    g.add_edge("Main Gate", "Playground", 500)
+
+    return g
+
+
+def main():
+    print("===== CAMPUS NAVIGATION SYSTEM =====")
+    campus_graph = build_sample_campus_graph()
+
+    print("\nAvailable Locations:")
+    for place in campus_graph.adj.keys():
+        print(" -", place)
+
+    start = input("\nEnter START location exactly as shown: ")
+    end = input("Enter DESTINATION location exactly as shown: ")
+
+    if start not in campus_graph.adj or end not in campus_graph.adj:
+        print("\n❌ Invalid location name. Please run again and choose from the list.")
+        return
+
+    distance, path = campus_graph.dijkstra(start, end)
+
+    if not path:
+        print("\nNo path found between", start, "and", end)
+    else:
+        print("\n✅ Shortest path from", start, "to", end, ":")
+        print(" -> ".join(path))
+        print("Total distance:", distance, "meters (example units)")
+
+
+if __name__ == "__main__":
+    main()
